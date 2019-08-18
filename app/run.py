@@ -75,8 +75,7 @@ def index():
         {
             'data': [
                 Histogram(
-                    x=word_counts,
-                    type='histogram'
+                    x=word_counts
                 )
             ],
             'layout': {
