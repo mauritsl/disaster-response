@@ -18,21 +18,28 @@ nltk.download('punkt')
 nltk.download('wordnet')
 
 def load_data(database_filepath):
+    """Load DataFrame from SQLite database file"""
+
     engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql_table('message', engine, index_col='id')
     X_columns = ['message', 'original', 'genre']
     Y_columns = list(filter(lambda item : item not in X_columns, df.columns.values))
     X = df.message
     Y = df[Y_columns]
+
     return X, Y, Y_columns
 
 
 def tokenize(text):
+    """Split input text in tokens"""
+
     lemmatizer = WordNetLemmatizer()
     return list(map(lambda t : lemmatizer.lemmatize(t).lower().strip(), word_tokenize(text)))
 
 
 def build_model():
+    """Build ML pipeline"""
+
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
         ('tfidf', TfidfTransformer()),
@@ -46,11 +53,13 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """Print model's performance indicators"""
+
     y_pred = model.predict(X_test)
     y_pred = pd.DataFrame(y_pred)
     y_pred.columns = Y_test.columns
     y_pred.index = Y_test.index
-    
+
     accuracy = 0
     for col in y_pred:
         print('{:25}: F1: {:01.2f} Precision: {:01.2f} Recall: {:01.2f}'.format(
@@ -65,22 +74,26 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """Save model to disk"""
+
     pickle.dump(model, open(model_filepath, 'wb'))
 
 
 def main():
+    """Main application function"""
+
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-        
+
         print('Building model...')
         model = build_model()
-        
+
         print('Training model...')
         model.fit(X_train, Y_train)
-        
+
         print('Evaluating model...')
         evaluate_model(model, X_test, Y_test, category_names)
 
